@@ -31,13 +31,10 @@ int PWM_CH4=0;
 int PWM_CH5=0;
 int PWM_CH6=0;
 
-//Define the values for mapping the inputs for the tank.
-int CH1_VAL=0;
-int CH2_VAL=0;
-int CH3_VAL=0;
-int CH4_VAL=0;
+//define the digital inputs vals for the switches.
 int CH5_VAL=0;
 int CH6_VAL=0;
+int speedControl;
 void setup() {
 //Define the inputs and engage the serial monitor in the setup.
 pinMode(ch1,INPUT);
@@ -67,17 +64,7 @@ PWM_CH4 = pulseIn (ch4,HIGH);
 PWM_CH5 = pulseIn (ch5,HIGH);
 PWM_CH6 = pulseIn (ch6,HIGH);
 
-//map the values.
-CH1_VAL = map(PWM_CH1, 1000, 1990, 0, 255);
-CH2_VAL = map(PWM_CH2, 1000, 1990, 0, 255);
-CH3_VAL = map(PWM_CH3, 1000, 1990, 0, 255);
-CH4_VAL = map(PWM_CH4, 1000, 1990, 0, 255);
-//fix for channel 4 hitting -1
-if(CH4_VAL<0){
-  CH4_VAL=0;
-}
-
-//format the digital switched inputs.
+//Format the digital switched inputs.
 if(PWM_CH5>1300){
   CH5_VAL=0;
 }
@@ -95,19 +82,25 @@ if(PWM_CH6>1600){
   CH6_VAL=0;
 }
 
+//Map and constrain the speedControl for the throttle stick.
+PWM_CH2 = constrain(PWM_CH2, 1000, 1980);
+speedControl = map(PWM_CH2, 1000, 1980, 0, 255);
+speedControl = constrain(speedControl, 0, 255);
+Serial.print(" Throttle = ");
+Serial.print(speedControl);
 
 //Read the pulses on the serial monitor, with a bit of formating.
 Serial.print("  Channel 1 = ");
-Serial.print(CH1_VAL);
+Serial.print(PWM_CH1);
 
 Serial.print("  Channel 2 = ");
-Serial.print(CH2_VAL);
+Serial.print(PWM_CH2);
 
 Serial.print("  Channel 3 = ");
-Serial.print(CH3_VAL);
+Serial.print(PWM_CH3);
 
 Serial.print("  Channel 4 = ");
-Serial.print(CH4_VAL);
+Serial.print(PWM_CH4);
 
 Serial.print("  Channel 5 = ");
 Serial.print(CH5_VAL);
@@ -117,7 +110,7 @@ Serial.println(CH6_VAL);
 
 //Map the PWM_CH functions to the motors for a forward motion.
 if(CH5_VAL==1000){
-  forward = map (CH2_VAL, 0, 255, 0, 255);
+  forward = map (speedControl, 0, 255, 0, 255);
 digitalWrite(IN1,LOW);
 digitalWrite(IN2,HIGH);
 analogWrite(ENA,forward);
@@ -129,7 +122,7 @@ analogWrite(ENB,forward);
 
 //Map the PWM_CH functions to the motors for a backward motion.
 if(CH5_VAL==0){
-  backward = map (CH2_VAL, 0, 253, 0, 255);
+  backward = map (speedControl, 0, 255, 0, 255);
 digitalWrite(IN1,HIGH);
 digitalWrite(IN2,LOW);
 analogWrite(ENA,backward);
@@ -140,9 +133,8 @@ analogWrite(ENB,backward);
 }
 
 //Map the PWM_CH functions to the motors for a left motion.
-if(CH6_VAL==500){
-  if(CH4_VAL<120){
-  left = map (CH4_VAL, 126, 0, 0, 255);
+if(PWM_CH1<1470){
+  left = map (PWM_CH1, 1470, 993, 0, 255);
 digitalWrite(IN1,HIGH);
 digitalWrite(IN2,LOW);
 analogWrite(ENA,left);
@@ -151,12 +143,10 @@ digitalWrite(IN3,LOW);
 digitalWrite(IN4,HIGH);
 analogWrite(ENB,left);
   }
-}
 
 //Map the PWM_CH functions to the motors for a right motion.
-if(CH6_VAL==0){
-  if(CH4_VAL>135){
-  right = map (CH4_VAL, 126, 253, 0, 255);
+if(PWM_CH1>1500){
+right = map (PWM_CH1, 1500, 1990, 0, 255);
 digitalWrite(IN1,LOW);
 digitalWrite(IN2,HIGH);
 analogWrite(ENA,right);
@@ -165,5 +155,4 @@ digitalWrite(IN3,HIGH);
 digitalWrite(IN4,LOW);
 analogWrite(ENB,right);
    }
-  }
 }
